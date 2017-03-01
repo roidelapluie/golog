@@ -21,13 +21,13 @@ var commands = []cli.Command{
 		Name:         "start",
 		Usage:        "Start tracking a given task",
 		Action:       Start,
-		BashComplete: AutocompleteTasks,
+		BashComplete: AutocompleteStoppedTasks,
 	},
 	{
 		Name:         "stop",
 		Usage:        "Stop tracking a given task",
 		Action:       Stop,
-		BashComplete: AutocompleteTasks,
+		BashComplete: AutocompleteStartedTasks,
 	},
 	{
 		Name:         "status",
@@ -115,6 +115,44 @@ func Clear(context *cli.Context) error {
 	}
 	return err
 }
+
+// AutocompleteStartedTasks loads started tasks from repository and show them for completion
+func AutocompleteStartedTasks(context *cli.Context) {
+	var err error
+	transformer.LoadedTasks, err = repository.load()
+	// This will complete if no args are passed
+	//   or there is problem with tasks repo
+	if len(context.Args()) > 0 || err != nil {
+		return
+	}
+
+	AutocompleteTasksByActivity(true)
+}
+
+// AutocompleteStoppedTasks loads stopped tasks from repository and show them for completion
+func AutocompleteStoppedTasks(context *cli.Context) {
+	var err error
+	transformer.LoadedTasks, err = repository.load()
+	// This will complete if no args are passed
+	//   or there is problem with tasks repo
+	if len(context.Args()) > 0 || err != nil {
+		return
+	}
+
+	AutocompleteTasksByActivity(false)
+}
+
+// AutocompleteStartedTasks loads started tasks from repository and show them for completion
+func AutocompleteTasksByActivity(active bool) {
+
+	for _, task := range transformer.LoadedTasks.Items {
+		_, isActive := transformer.TrackingToSeconds(task.getIdentifier())
+		if isActive == active {
+			fmt.Println(task.getIdentifier())
+		}
+	}
+}
+
 
 // AutocompleteTasks loads tasks from repository and show them for completion
 func AutocompleteTasks(context *cli.Context) {
